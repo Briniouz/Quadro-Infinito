@@ -1693,7 +1693,7 @@
     if (e.shiftKey && shiftable) m.push('Shift');
     return [...m, key].join('+');
   }
-  const fmtCombo = c => c.replace('Space', 'Espaço');
+  const fmtCombo = c => c.replace('Space', 'Espaço').replace(/(^|\+)([a-z])$/, (m, p, l) => p + l.toUpperCase());
   function saveKeys() { keyMapCache = null; clearTimeout(metaTimer); DB.set('meta', clone(meta)).catch(() => {}); renderKeyList(); buildShortcuts(); }
   function runKey(act, e) {
     const one = selection.size === 1 ? byId([...selection][0]) : null;
