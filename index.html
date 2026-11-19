@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quadro</title>
+<meta name="description" content="Quadro infinito pessoal: escrita, desenho com mesa digitalizadora, mapas mentais, tabelas, imagens e setas.">
+<meta name="theme-color" content="#0b0e14">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%232f6bff'/%3E%3Cpath d='M17 45c6-14 11-22 16-22 6 0 2 13 8 13 3 0 5-3 7-7' fill='none' stroke='white' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+  try {
+    const t = localStorage.getItem('quadro-theme');
+    document.documentElement.dataset.theme = t === 'dark' || t === 'light' ? t : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  } catch { document.documentElement.dataset.theme = 'dark'; }
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="ambient" aria-hidden="true"></div>
+<div id="grid" aria-hidden="true"></div>
+
+<svg id="board" role="application" aria-label="Quadro infinito" data-cursor="pen">
+  <g id="world"><g id="layer"></g><g id="overlay"></g></g>
+</svg>
+<div id="ring" aria-hidden="true" hidden></div>
+
+<header class="topbar">
+  <div class="glass brand">
+    <button id="menuBtn" class="ibtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    </button>
+    <span class="brand-name">Quadro</span>
+    <span id="saveState" class="save-state" title="Salvo neste navegador"><i></i><span>Salvo</span></span>
+  </div>
+
+  <div class="tabs-wrap">
+    <div class="glass tabs-pill">
+      <div id="tabs" class="tabs" role="tablist" aria-label="Quadros"></div>
+      <button id="addTab" class="ibtn" type="button" title="Novo quadro" aria-label="Novo quadro">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="glass right">
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Alternar tema">
+      <span class="tt-track">
+        <svg class="tt-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>
+        <svg class="tt-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6"/><path d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"/></svg>
+        <span class="tt-knob">
+          <svg class="k-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.6"/><path d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"/></svg>
+          <svg class="k-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z"/></svg>
+        </span>
+      </span>
+    </button>
+    <button id="settingsBtn" class="ibtn" type="button" aria-label="Configurações" aria-expanded="false" aria-controls="settings">
+      <svg viewBox="0 0 24 24"><path d="m10 3-.8 2.5-2 .9-2.5-1-1.9 3.3 2 1.7v2.3l-2 1.7 1.9 3.3 2.5-.9 2 .9.8 2.5h4l.8-2.5 2-.9 2.5.9 1.9-3.3-2-1.7v-2.3l2-1.7-1.9-3.3-2.5 1-2-.9L14 3z"/><circle cx="12" cy="11.6" r="3"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav id="toolbar" class="glass toolbar" aria-label="Ferramentas"></nav>
+<aside id="stylebar" class="glass stylebar" aria-label="Estilo" hidden></aside>
+<div id="ctxbar" class="glass ctxbar" hidden></div>
+
+<div class="glass histbar">
+  <button id="undoBtn" class="ibtn" type="button" title="Desfazer (Ctrl+Z)" aria-label="Desfazer"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+  <button id="redoBtn" class="ibtn" type="button" title="Refazer (Ctrl+Shift+Z)" aria-label="Refazer"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+</div>
+
+<div class="glass zoombar">
+  <button id="zoomOut" class="ibtn" type="button" title="Diminuir zoom (Ctrl −)" aria-label="Diminuir zoom"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+  <button id="zoomLabel" class="zoom-label" type="button" title="Voltar para 100% (Ctrl 0)">100%</button>
+  <button id="zoomIn" class="ibtn" type="button" title="Aumentar zoom (Ctrl +)" aria-label="Aumentar zoom"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button id="zoomFit" class="ibtn" type="button" title="Enquadrar tudo (Shift 1)" aria-label="Enquadrar tudo"><svg viewBox="0 0 24 24"><path d="M4 9V5a1 1 0 0 1 1-1h4M15 4h4a1 1 0 0 1 1 1v4M20 15v4a1 1 0 0 1-1 1h-4M9 20H5a1 1 0 0 1-1-1v-4"/></svg></button>
+</div>
+
+<div id="menu" class="glass pop" hidden role="menu"></div>
+<section id="settings" class="glass panel" hidden aria-label="Configurações"></section>
+<section id="shortcuts" class="glass panel wide" hidden aria-label="Atalhos"></section>
+<div id="toast" class="glass toast" role="status" hidden></div>
+
+<input id="fileImage" type="file" accept="image/*" multiple hidden>
+<input id="fileSheet" type="file" accept=".csv,.tsv,.txt,text/csv" hidden>
+<input id="fileBackup" type="file" accept=".json,application/json" hidden>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="lg-refract" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="11" result="noise"/>
+    <feGaussianBlur in="noise" stdDeviation="2.4" result="soft"/>
+    <feDisplacementMap in="SourceGraphic" in2="soft" scale="26" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<script src="app.js"></script>
+</body>
+</html>
