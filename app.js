@@ -1437,10 +1437,21 @@
       <h3>Quadro</h3>
       <div class="row"><label for="setBg">Fundo</label><select id="setBg">${opts([['dots', 'Pontos'], ['grid', 'Quadriculado'], ['lines', 'Pautado'], ['none', 'Liso']], s.bg)}</select></div>
       <div class="row"><label for="setWheel">Rodinha do mouse<small>Ctrl + rodinha sempre dá zoom</small></label><select id="setWheel">${opts([['pan', 'Mover o quadro'], ['zoom', 'Dar zoom']], s.wheel)}</select></div>
+      <h3>Atalhos de teclado</h3>
+      <div id="keyList"></div>
+      <div class="row" style="justify-content:flex-start"><button class="outline" id="keyReset" type="button">Restaurar atalhos padrão</button></div>
       <h3>Aparência</h3>
       <div class="row"><label for="setTheme">Tema<small>Automático segue o tema do sistema</small></label><select id="setTheme">${opts([['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Escuro']], themePref() || 'auto')}</select></div>
       <div class="row"><label for="setRefract">Refração do vidro<small>Efeito líquido nas barras (Chrome e Edge)</small></label>${sw('setRefract', s.refraction)}</div>`;
-    p.addEventListener('click', e => { if (e.target.closest('[data-close]')) closePopovers(); });
+    p.addEventListener('click', e => {
+      if (e.target.closest('[data-close]')) return closePopovers();
+      const rm = e.target.closest('[data-rm]');
+      if (rm) { K()[rm.dataset.rm] = K()[rm.dataset.rm].filter(x => x !== rm.dataset.c); return saveKeys(); }
+      const add = e.target.closest('[data-add]');
+      if (add) return startRecord(add.dataset.add);
+      if (e.target.closest('#keyReset')) { meta.settings.keys = mergeKeys(null); saveKeys(); toast('Atalhos restaurados.'); }
+    });
+    renderKeyList();
     p.addEventListener('change', e => {
       const id = e.target.id, s = S();
       if (id === 'setBarrel') s.barrel = e.target.value;
@@ -1471,13 +1482,10 @@
     const out = $('#penTestOut'); if (out && !$('#settings').hidden) out.dataset.last = name;
   }
   function buildShortcuts() {
-    const k = [['Selecionar', 'V'], ['Mover quadro', 'H ou Espaço'], ['Caneta', 'P'], ['Marca-texto', 'M'], ['Borracha', 'E'], ['Retângulo', 'R'], ['Elipse', 'O'], ['Losango', 'D'], ['Seta', 'A'], ['Linha', 'L'], ['Texto', 'T ou duplo clique'], ['Nota', 'N'], ['Tabela', 'G'], ['Imagem', 'I ou Ctrl+V'],
-      ['Ramificar (mapa mental)', 'Tab'], ['Ramo irmão', 'Shift+Tab'], ['Editar selecionado', 'Enter'], ['Sair da edição', 'Esc'], ['Desfazer', 'Ctrl+Z'], ['Refazer', 'Ctrl+Shift+Z'], ['Duplicar', 'Ctrl+D'], ['Selecionar tudo', 'Ctrl+A'], ['Excluir', 'Delete'], ['Frente / trás', 'Ctrl+] / Ctrl+['],
-      ['Zoom', 'Ctrl+roda ou pinça'], ['100%', 'Ctrl+0'], ['Enquadrar tudo', 'Shift+1'], ['Linha reta / quadrado', 'Segurar Shift']];
+    const rows = KEY_ACTIONS.map(([a, label]) => `<div><span>${label}</span><kbd>${K()[a].map(c => esc(fmtCombo(c))).join(' · ') || '—'}</kbd></div>`).join('');
     $('#shortcuts').innerHTML = `<button class="ibtn panel-close" data-close aria-label="Fechar">${icon('close')}</button><h2>Atalhos</h2>
-      <p class="sub">Na tabela: Tab e Enter andam entre as células. Fórmulas começam com “=”, por exemplo =SOMA(A2:A5), =MEDIA(B2:B9) ou =A2*B2.</p>
-      <div class="keys">${k.map(([a, b]) => `<div><span>${a}</span><kbd>${b}</kbd></div>`).join('')}</div>`;
-    $('#shortcuts').addEventListener('click', e => { if (e.target.closest('[data-close]')) closePopovers(); });
+      <p class="sub">Muda em Configurações → Atalhos de teclado (aceita mais de uma combinação por ação). Fixos: segurar Espaço move o quadro, Delete apaga, Enter edita, Esc sai e ? abre esta lista. Na tabela, Tab e Enter andam entre células. Fórmulas começam com “=”.</p>
+      <div class="keys">${rows}</div>`;
   }
   function applySettings() {
     const s = S();
@@ -1638,32 +1646,115 @@
   function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3200); }
 
   /* ---------------- teclado, colar, arrastar ---------------- */
+  /* ---------------- atalhos configuráveis ---------------- */
+  const KEY_ACTIONS = [
+    ['undo', 'Desfazer', ['Ctrl+z']], ['redo', 'Refazer', ['Ctrl+Shift+z', 'Ctrl+y']],
+    ['duplicate', 'Duplicar', ['Ctrl+d']], ['selectAll', 'Selecionar tudo', ['Ctrl+a']],
+    ['bringFront', 'Trazer para frente', ['Ctrl+]']], ['sendBack', 'Enviar para trás', ['Ctrl+[']],
+    ['zoomIn', 'Aumentar zoom', ['Ctrl+=', 'Ctrl++']], ['zoomOut', 'Diminuir zoom', ['Ctrl+-']],
+    ['zoomReset', 'Zoom 100%', ['Ctrl+0']], ['fitAll', 'Enquadrar tudo', ['Shift+1']],
+    ['child', 'Ramificar (mapa mental)', ['Tab', 'Ctrl+Enter']], ['sibling', 'Ramo irmão', ['Shift+Tab']],
+    ['toolSelect', 'Ferramenta: selecionar', ['v']], ['toolHand', 'Ferramenta: mover quadro', ['h']],
+    ['toolPen', 'Ferramenta: caneta', ['p']], ['toolHl', 'Ferramenta: marca-texto', ['m']],
+    ['toolEraser', 'Ferramenta: borracha', ['e']], ['toolRect', 'Ferramenta: retângulo', ['r']],
+    ['toolEllipse', 'Ferramenta: elipse', ['o']], ['toolDiamond', 'Ferramenta: losango', ['d']],
+    ['toolArrow', 'Ferramenta: seta', ['a']], ['toolLine', 'Ferramenta: linha', ['l']],
+    ['toolText', 'Ferramenta: texto', ['t']], ['toolNote', 'Ferramenta: nota', ['n']],
+    ['toolTable', 'Ferramenta: tabela', ['g']], ['toolImage', 'Inserir imagem', ['i']],
+  ];
+  const KEY_LABEL = Object.fromEntries(KEY_ACTIONS.map(([a, l]) => [a, l]));
+  const TOOL_OF = { toolSelect: 'select', toolHand: 'hand', toolPen: 'pen', toolHl: 'hl', toolEraser: 'eraser', toolRect: 'rect', toolEllipse: 'ellipse', toolDiamond: 'diamond', toolArrow: 'arrow', toolLine: 'line', toolText: 'text', toolNote: 'note', toolTable: 'table', toolImage: 'image' };
+  const K = () => meta.settings.keys;
+  let keyMapCache = null;
+  const keyMap = () => {
+    if (!keyMapCache) { keyMapCache = new Map(); for (const [a] of KEY_ACTIONS) for (const c of K()[a] || []) keyMapCache.set(c, a); }
+    return keyMapCache;
+  };
+  function mergeKeys(saved) {
+    const out = {}, seen = new Set();
+    for (const [a, , d] of KEY_ACTIONS) {
+      const s = saved?.[a];
+      const list = Array.isArray(s) && s.every(x => typeof x === 'string' && x.length <= 40) ? s : d;
+      out[a] = [...new Set(list)].filter(c => !seen.has(c) && seen.add(c));
+    }
+    return out;
+  }
+  // Monta o nome de uma combinação a partir do evento: "Ctrl+Shift+z", "Tab", "Space"...
+  function comboOf(e) {
+    const k = e.key;
+    if (['Control', 'Shift', 'Alt', 'Meta', 'AltGraph'].includes(k)) return null;
+    let key = k.length === 1 ? k.toLowerCase() : k;
+    if (k === ' ') key = 'Space';
+    if (e.shiftKey && /^Digit\d$/.test(e.code)) key = e.code.slice(5);
+    const shiftable = key.length > 1 || /^[a-z0-9]$/.test(key);
+    const m = [];
+    if (e.ctrlKey || e.metaKey) m.push('Ctrl');
+    if (e.altKey) m.push('Alt');
+    if (e.shiftKey && shiftable) m.push('Shift');
+    return [...m, key].join('+');
+  }
+  const fmtCombo = c => c.replace('Space', 'Espaço');
+  function saveKeys() { keyMapCache = null; clearTimeout(metaTimer); DB.set('meta', clone(meta)).catch(() => {}); renderKeyList(); buildShortcuts(); }
+  function runKey(act, e) {
+    const one = selection.size === 1 ? byId([...selection][0]) : null;
+    const cx = innerWidth / 2, cy = innerHeight / 2;
+    switch (act) {
+      case 'undo': undo(); break;
+      case 'redo': redo(); break;
+      case 'duplicate': duplicate(); break;
+      case 'selectAll': setTool('select'); board.elements.forEach(el => selection.add(el.id)); onSelectionChange(); break;
+      case 'bringFront': reorder(true); break;
+      case 'sendBack': reorder(false); break;
+      case 'zoomIn': zoomAt(1.2, cx, cy); break;
+      case 'zoomOut': zoomAt(1 / 1.2, cx, cy); break;
+      case 'zoomReset': zoomAt(1 / board.cam.z, cx, cy); break;
+      case 'fitAll': fitAll(); break;
+      case 'child': if (isNode(one)) addChild(one, false); break;
+      case 'sibling': if (isNode(one)) addChild(one, true); break;
+      default: if (TOOL_OF[act] && !e.repeat) setTool(TOOL_OF[act]);
+    }
+  }
+  let recording = null;
+  function renderKeyList() {
+    const list = $('#keyList'); if (!list) return;
+    list.innerHTML = KEY_ACTIONS.map(([a, label]) => `<div class="krow"><span class="klabel">${label}</span><span class="kcombos">${K()[a].map(c => `<span class="kchip"><kbd>${esc(fmtCombo(c))}</kbd><button type="button" class="kx" data-rm="${a}" data-c="${esc(c)}" aria-label="Remover ${esc(fmtCombo(c))}">×</button></span>`).join('')}<button type="button" class="kadd" data-add="${a}">${recording === a ? 'Pressione uma tecla…' : '+ adicionar'}</button></span></div>`).join('');
+  }
+  function startRecord(a) {
+    if (recording) return;
+    recording = a; renderKeyList();
+    const stop = () => { removeEventListener('keydown', onKey, true); recording = null; renderKeyList(); };
+    const onKey = e => {
+      e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation();
+      if (e.key === 'Escape' && !e.ctrlKey && !e.altKey && !e.shiftKey) { stop(); return; }
+      const c = comboOf(e); if (!c) return;
+      const keys = K();
+      for (const [b] of KEY_ACTIONS) keys[b] = keys[b].filter(x => x !== c);
+      keys[a] = [...keys[a], c];
+      stop(); saveKeys();
+      toast(`${fmtCombo(c)} → ${KEY_LABEL[a]}`);
+    };
+    addEventListener('keydown', onKey, true);
+  }
+
   function bindKeys() {
     addEventListener('keydown', e => {
       const typing = isTyping(e.target);
+      const combo = comboOf(e);
+      const act = combo ? keyMap().get(combo) : undefined;
       if (typing) {
         if (editing && e.target.closest?.('#layer')) {
           const el = byId(editing.id);
           if (el && el.type !== 'table') {
             if (e.key === 'Escape') { e.preventDefault(); endEdit(); }
-            else if (e.key === 'Tab') { e.preventDefault(); endEdit(); if (byId(el.id)) addChild(el, e.shiftKey); }
-            else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); endEdit(); if (byId(el.id)) addChild(el, true); }
+            else if (act === 'child' || act === 'sibling') { e.preventDefault(); endEdit(); if (byId(el.id)) addChild(el, act === 'sibling'); }
           }
         }
         return;
       }
-      const k = e.key.toLowerCase(), mod = e.ctrlKey || e.metaKey;
-      if (mod) {
-        if (k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
-        else if (k === 'y') { e.preventDefault(); redo(); }
-        else if (k === 'd') { e.preventDefault(); duplicate(); }
-        else if (k === 'a') { e.preventDefault(); setTool('select'); board.elements.forEach(el => selection.add(el.id)); onSelectionChange(); }
-        else if (k === '0') { e.preventDefault(); zoomAt(1 / board.cam.z, innerWidth / 2, innerHeight / 2); }
-        else if (k === '=' || k === '+') { e.preventDefault(); zoomAt(1.2, innerWidth / 2, innerHeight / 2); }
-        else if (k === '-') { e.preventDefault(); zoomAt(1 / 1.2, innerWidth / 2, innerHeight / 2); }
-        else if (k === ']') { e.preventDefault(); reorder(true); }
-        else if (k === '[') { e.preventDefault(); reorder(false); }
-        return;
+      if (act) {
+        const one = selection.size === 1 ? byId([...selection][0]) : null;
+        if ((act === 'child' || act === 'sibling') && !isNode(one)) return;
+        e.preventDefault(); runKey(act, e); return;
       }
       if (e.altKey) return;
       if (e.key === ' ') { e.preventDefault(); if (!spaceDown) { spaceDown = true; updateCursor(); } return; }
@@ -1671,8 +1762,6 @@
       if (e.key === 'Escape') { if (!$('#menu').hidden || !$('#settings').hidden || !$('#shortcuts').hidden) closePopovers(); else { selection.clear(); onSelectionChange(); } return; }
       const one = selection.size === 1 ? byId([...selection][0]) : null;
       if (e.key === 'Enter' && editable(one)) { e.preventDefault(); startEdit(one, one.type === 'table' ? [0, 0] : null); return; }
-      if (e.key === 'Tab') { if (isNode(one)) { e.preventDefault(); addChild(one, e.shiftKey); } return; }
-      if (e.key === '!' || (e.shiftKey && e.code === 'Digit1')) { fitAll(); return; }
       if (e.key === '?') { togglePop('shortcuts'); return; }
       if (e.key.startsWith('Arrow') && selection.size) {
         e.preventDefault(); const d = e.shiftKey ? 10 : 1;
@@ -1680,8 +1769,6 @@
         for (const id of selection) { const el = byId(id); if (el) { translate(el, clone(el), dx, dy); renderEl(el); } }
         renderArrows(); renderOverlay(); commit(); return;
       }
-      const map = { v: 'select', h: 'hand', p: 'pen', m: 'hl', e: 'eraser', r: 'rect', o: 'ellipse', d: 'diamond', a: 'arrow', l: 'line', t: 'text', n: 'note', g: 'table', i: 'image' };
-      if (map[k] && !e.repeat) setTool(map[k]);
     });
     addEventListener('keyup', e => { if (e.key === ' ') { spaceDown = false; updateCursor(); } });
     addEventListener('blur', () => { spaceDown = false; heldOverride = null; updateCursor(); });
@@ -1782,8 +1869,10 @@
     m.settings = { ...DEFAULT_SETTINGS, ...(m.settings || {}) };
     m.styles = Object.fromEntries(Object.entries(DEFAULT_STYLES).map(([k, v]) => [k, { ...v, ...(m.styles?.[k] || {}) }]));
     if (!m.boards.some(b => b.id === m.active)) m.active = m.boards[0].id;
+    m.settings.keys = mergeKeys(m.settings.keys);
     meta = m;
     buildMenu(); buildSettings(); buildShortcuts(); applySettings();
+    $('#shortcuts').addEventListener('click', e => { if (e.target.closest('[data-close]')) closePopovers(); });
     await switchBoard(meta.active);
     if (first) { seedWelcome(); renderAll(); hist.last = snap(); fitAll(); await flushSave(); }
     setTool('pen');

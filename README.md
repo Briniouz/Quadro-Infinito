@@ -20,6 +20,8 @@ Quadro infinito pessoal, feito para desenhar com mesa digitalizadora, escrever, 
 
 ## Atalhos
 
+Todos os atalhos abaixo podem ser trocados em **Configurações → Atalhos de teclado**. Cada ação aceita mais de uma combinação (por exemplo `Ctrl+Z` e `Ctrl+Alt+J` para desfazer), com Ctrl, Alt e Shift. Se uma combinação já estiver em uso, ela passa para a nova ação.
+
 | Ferramenta | Tecla | | Ação | Tecla |
 |---|---|---|---|---|
 | Selecionar | V | | Ramificar | Tab |

@@ -322,3 +322,12 @@ foreignObject { overflow: visible; }
   .panel, .panel.wide { left: 8px; right: 8px; width: auto; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.krow { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.klabel { flex-shrink: 0; }
+.kcombos { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.kchip { display: inline-flex; align-items: center; gap: 1px; background: var(--hover); border-radius: 8px; padding-right: 2px; }
+.kchip kbd { background: none; box-shadow: none; }
+.kx { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 4px; font-size: 14px; line-height: 1; }
+.kx:hover { color: var(--danger); }
+.kadd { border: 1px dashed var(--line); background: none; border-radius: 8px; padding: 2px 9px; color: var(--muted); cursor: pointer; font-size: 12px; }
+.kadd:hover { color: var(--ink); }
